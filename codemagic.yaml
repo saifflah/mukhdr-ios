@@ -17,6 +17,12 @@ workflows:
         script: |
           rm -rf ios
           npx cap add ios
+          cd ios/App
+          # التأكد من وجود Podfile أو إنشاؤه إن لم يكن موجوداً
+          if [ ! -f "Podfile" ]; then
+            pod init
+          fi
+          cd ../..
           npx cap sync ios
           cd ios/App
           pod install
