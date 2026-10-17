@@ -4,25 +4,21 @@ workflows:
     max_build_duration: 120
     instance_type: mac_mini_m1
     scripts:
-      - name: Install dependencies
+      - name: Install Dependencies & Build Web Assets
         script: |
           npm install
-      - name: Ensure Web Assets (www) Exist
-        script: |
           if [ ! -d "www" ]; then
             mkdir www
             echo "<script>window.location.href = 'https://mukhdr.shop';</script>" > www/index.html
           fi
-      - name: Fresh Setup Capacitor iOS
+          npm run build --if-present
+      - name: Setup iOS, Pods and Build App
         script: |
           rm -rf ios
           npx cap add ios
           npx cap sync ios
           cd ios/App
-          pod install || true
-      - name: Build iOS App for Simulator
-        script: |
-          cd ios/App
+          pod install
           xcodebuild -workspace App.xcworkspace \
                      -scheme App \
                      -sdk iphonesimulator \
