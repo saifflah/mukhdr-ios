@@ -17,17 +17,26 @@ workflows:
         script: |
           rm -rf ios
           npx cap add ios
-          cd ios/App
-          if [ ! -f "Podfile" ]; then
-            echo "platform :ios, '13.0'" > Podfile
-            echo "use_frameworks!" >> Podfile
-            echo "target 'App' do" >> Podfile
-            echo "end" >> Podfile
-          fi
-          cd ../..
-          npx cap sync ios
-          cd ios/App
+          
+          # كتابة Podfile متكامل يدعم حزم وبلكينات المشروع بالكامل
+          cd ios
+          cat <<EOT > Podfile
+          platform :ios, '13.0'
+          use_frameworks!
+
+          target 'App' do
+            # Pods for App
+            pod 'Capacitor', :path => '../../node_modules/@capacitor/ios'
+            pod 'CapacitorCordova', :path => '../../node_modules/@capacitor/ios'
+            pod 'CapacitorCommunityFacebookLogin', :path => '../../node_modules/@capacitor-community/facebook-login'
+            pod 'CapacitorPushNotifications', :path => '../../node_modules/@capacitor/push-notifications'
+            pod 'OneSignalCordovaPlugin', :path => '../../node_modules/onesignal-cordova-plugin'
+          end
+          EOT
+
           pod install
+          cd ..
+          npx cap sync ios
       - name: Build iOS App for Simulator
         script: |
           cd ios
