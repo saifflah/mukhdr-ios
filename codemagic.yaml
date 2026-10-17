@@ -17,8 +17,21 @@ workflows:
         script: |
           rm -rf ios
           npx cap add ios
+          
+          # التأكد من وجود مجلد App وإنشاء Podfile أساسي لضمان عدم حدوث خطأ
+          cd ios/App
+          if [ ! -f "Podfile" ]; then
+            cat <<EOT > Podfile
+            platform :ios, '13.0'
+            use_frameworks!
+            target 'App' do
+            end
+EOT
+          fi
+          cd ../..
           npx cap sync ios
-          cd ios
+          
+          cd ios/App
           pod install
       - name: Build iOS App for Simulator
         script: |
