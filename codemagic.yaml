@@ -3,29 +3,38 @@ workflows:
     name: iOS Simulator Build
     max_build_duration: 120
     instance_type: mac_mini_m1
+
     scripts:
       - name: Install Dependencies & Build Web Assets
         script: |
           npm install
+
           if [ ! -d "www" ]; then
-            mkdir www
+            mkdir -p www
             echo "<script>window.location.href = 'https://mukhdr.shop';</script>" > www/index.html
           fi
+
           npm run build --if-present
-      - name: Setup iOS, Pods and Build App
+
+      - name: Setup iOS, CocoaPods and Build App
         script: |
           rm -rf ios
-          npx cap add ios
+
+          npx cap add ios --packagemanager CocoaPods
           npx cap sync ios
+
           cd ios/App
+
           pod install
-          xcodebuild -workspace App.xcworkspace \
-                     -scheme App \
-                     -sdk iphonesimulator \
-                     -configuration Debug \
-                     -derivedDataPath build \
-                     CODE_SIGN_IDENTITY="" \
-                     CODE_SIGNING_REQUIRED=NO \
-                     CODE_SIGNING_ALLOWED=NO
+
+          xcodebuild \
+            -workspace App.xcworkspace \
+            -scheme App \
+            -sdk iphonesimulator \
+            -configuration Debug \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+
     artifacts:
       - ios/App/build/Build/Products/Debug-iphonesimulator/*.app
