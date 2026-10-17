@@ -1,0 +1,9 @@
+{
+  "appId": "com.mukhdr.app",
+  "appName": "Mukhdr",
+  "webDir": "www",
+  "server": {
+    "url": "https://mukhdr.shop/",
+    "cleartext": true
+  }
+}
