@@ -13,34 +13,17 @@ workflows:
             mkdir www
             echo "<script>window.location.href = 'https://mukhdr.shop';</script>" > www/index.html
           fi
-      - name: Fresh Setup Capacitor iOS and Pods
+      - name: Fresh Setup Capacitor iOS
         script: |
           rm -rf ios
           npx cap add ios
-          
-          # كتابة Podfile متكامل يدعم حزم وبلكينات المشروع بالكامل
-          cd ios
-          cat <<EOT > Podfile
-          platform :ios, '13.0'
-          use_frameworks!
-
-          target 'App' do
-            # Pods for App
-            pod 'Capacitor', :path => '../../node_modules/@capacitor/ios'
-            pod 'CapacitorCordova', :path => '../../node_modules/@capacitor/ios'
-            pod 'CapacitorCommunityFacebookLogin', :path => '../../node_modules/@capacitor-community/facebook-login'
-            pod 'CapacitorPushNotifications', :path => '../../node_modules/@capacitor/push-notifications'
-            pod 'OneSignalCordovaPlugin', :path => '../../node_modules/onesignal-cordova-plugin'
-          end
-          EOT
-
-          pod install
-          cd ..
           npx cap sync ios
+          cd ios/App
+          pod install || true
       - name: Build iOS App for Simulator
         script: |
-          cd ios
-          xcodebuild -workspace App/App.xcworkspace \
+          cd ios/App
+          xcodebuild -workspace App.xcworkspace \
                      -scheme App \
                      -sdk iphonesimulator \
                      -configuration Debug \
@@ -49,4 +32,4 @@ workflows:
                      CODE_SIGNING_REQUIRED=NO \
                      CODE_SIGNING_ALLOWED=NO
     artifacts:
-      - ios/build/Build/Products/Debug-iphonesimulator/*.app
+      - ios/App/build/Build/Products/Debug-iphonesimulator/*.app
