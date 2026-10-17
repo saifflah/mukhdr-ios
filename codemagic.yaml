@@ -17,19 +17,13 @@ workflows:
         script: |
           rm -rf ios
           npx cap add ios
-          cd ios/App
-          # التأكد من وجود Podfile أو إنشاؤه إن لم يكن موجوداً
-          if [ ! -f "Podfile" ]; then
-            pod init
-          fi
-          cd ../..
           npx cap sync ios
-          cd ios/App
+          cd ios
           pod install
       - name: Build iOS App for Simulator
         script: |
-          cd ios/App
-          xcodebuild -workspace App.xcworkspace \
+          cd ios
+          xcodebuild -workspace App/App.xcworkspace \
                      -scheme App \
                      -sdk iphonesimulator \
                      -configuration Debug \
@@ -38,4 +32,4 @@ workflows:
                      CODE_SIGNING_REQUIRED=NO \
                      CODE_SIGNING_ALLOWED=NO
     artifacts:
-      - ios/App/build/Build/Products/Debug-iphonesimulator/*.app
+      - ios/build/Build/Products/Debug-iphonesimulator/*.app
