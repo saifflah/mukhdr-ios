@@ -10,8 +10,10 @@ workflows:
 
     environment:
       ios_signing:
-        distribution_type: app_store
-        bundle_identifier: com.mukhdr.shop
+        provisioning_profiles:
+          - Mukhdr_AppStore_Profile_New
+        certificates:
+          - Mukhdr_Distribution_20260
       vars:
         XCODE_SCHEME: "App"
 
@@ -30,20 +32,13 @@ workflows:
       - name: Setup iOS & Pods
         script: |
           rm -rf ios
-
           npx cap add ios --packagemanager CocoaPods
           npx cap sync ios
-
           cd ios/App
-
-          echo "Checking iOS project files:"
-          ls -la
-
           if [ ! -f "Podfile" ]; then
             echo "ERROR: Podfile was not generated."
             exit 1
           fi
-
           pod install
 
       - name: Set Up Code Signing Profiles
@@ -53,7 +48,6 @@ workflows:
       - name: Build iOS IPA for App Store / TestFlight
         script: |
           cd ios/App
-
           xcode-project build-ipa \
             --workspace "App.xcworkspace" \
             --scheme "$XCODE_SCHEME"
