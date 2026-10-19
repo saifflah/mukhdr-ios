@@ -1,44 +1,67 @@
+
 workflows:
   ios-release-build:
     name: iOS TestFlight Release Build
     max_build_duration: 120
     instance_type: mac_mini_m1
+
     integrations:
       app_store_connect: MUKHDR_CONNECT
+
     environment:
       ios_signing:
         distribution_type: app_store
         bundle_identifier: com.mukhdr.shop
       vars:
         XCODE_SCHEME: "App"
+
     scripts:
       - name: Install Dependencies
         script: |
           npm install
+
           if [ ! -d "www" ]; then
-            mkdir www
+            mkdir -p www
             echo "<script>window.location.href = 'https://mukhdr.shop';</script>" > www/index.html
           fi
+
           npm run build --if-present
+
       - name: Setup iOS & Pods
         script: |
           rm -rf ios
-          npx cap add ios
+
+          npx cap add ios --packagemanager CocoaPods
           npx cap sync ios
+
           cd ios/App
+
+          echo "Checking iOS project files:"
+          ls -la
+
+          if [ ! -f "Podfile" ]; then
+            echo "ERROR: Podfile was not generated."
+            exit 1
+          fi
+
           pod install
+
       - name: Set Up Code Signing Profiles
         script: |
           xcode-project use-profiles
+
       - name: Build iOS IPA for App Store / TestFlight
         script: |
           cd ios/App
+
           xcode-project build-ipa \
             --workspace "App.xcworkspace" \
             --scheme "$XCODE_SCHEME"
+
     artifacts:
       - build/ios/ipa/*.ipa
       - /tmp/xcodebuild_logs/*.log
+
     publishing:
       app_store_connect:
         auth: integration
