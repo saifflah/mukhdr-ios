@@ -29,7 +29,7 @@ workflows:
           pod install
       - name: Set Up Code Signing Profiles
         script: |
-          xcode-project use-profiles --create
+          xcode-project use-profiles
       - name: Build iOS IPA for App Store / TestFlight
         script: |
           cd ios/App
