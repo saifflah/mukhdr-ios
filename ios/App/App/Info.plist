@@ -62,5 +62,10 @@
 	<!-- اسم التطبيق -->
 	<key>FacebookDisplayName</key>
 	<string>مخضر</string>
+
+<key>NSLocationWhenInUseUsageDescription</key>
+	<string>يحتاج تطبيق مخضر إلى معرفة موقعك لتحديد عنوان توصيل الطلب بدقة.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>يحتاج تطبيق مخضر إلى معرفة موقعك لتحديد عنوان توصيل الطلب بدقة.</string>
 </dict>
 </plist>
