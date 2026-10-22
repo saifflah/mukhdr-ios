@@ -1,3 +1,4 @@
+
 workflows:
   ios-release-build:
     name: iOS TestFlight Release Build
@@ -33,17 +34,38 @@ workflows:
           rm -rf ios
           npx cap add ios --packagemanager CocoaPods
           npx cap sync ios
+
           cd ios/App
+
           if [ ! -f "Podfile" ]; then
             echo "ERROR: Podfile was not generated."
             exit 1
           fi
+
           pod install
+
+      - name: Configure iOS Location Permission
+        script: |
+          PLIST="ios/App/App/Info.plist"
+
+          if [ ! -f "$PLIST" ]; then
+            echo "ERROR: Info.plist was not found at $PLIST"
+            find ios -name "Info.plist" -print
+            exit 1
+          fi
+
+          if /usr/libexec/PlistBuddy -c "Print :NSLocationWhenInUseUsageDescription" "$PLIST" >/dev/null 2>&1; then
+            /usr/libexec/PlistBuddy -c "Set :NSLocationWhenInUseUsageDescription نحتاج إلى موقعك الحالي لتحديد عنوان توصيل طلبك بدقة." "$PLIST"
+          else
+            /usr/libexec/PlistBuddy -c "Add :NSLocationWhenInUseUsageDescription string نحتاج إلى موقعك الحالي لتحديد عنوان توصيل طلبك بدقة." "$PLIST"
+          fi
+
+          echo "Location permission description configured:"
+          /usr/libexec/PlistBuddy -c "Print :NSLocationWhenInUseUsageDescription" "$PLIST"
 
       - name: Increment Build Number Automatically
         script: |
           cd ios/App
-          # يقوم هذا الأمر بضبط رقم الـ Build ليكون متطابقاً مع رقم البناء في Codemagic
           agvtool new-version -all $BUILD_NUMBER
 
       - name: Set Up Code Signing Profiles
@@ -53,6 +75,7 @@ workflows:
       - name: Build iOS IPA for App Store / TestFlight
         script: |
           cd ios/App
+
           xcode-project build-ipa \
             --workspace "App.xcworkspace" \
             --scheme "$XCODE_SCHEME"
