@@ -44,6 +44,36 @@ workflows:
 
           pod install
 
+      - name: Apply Mukhdr App Icon
+        script: |
+          if [ ! -f "mukhdr-ios-icon.zip" ]; then
+            echo "ERROR: mukhdr-ios-icon.zip was not found in the repository root."
+            exit 1
+          fi
+
+          mkdir -p /tmp/mukhdr-icon
+          unzip -o mukhdr-ios-icon.zip -d /tmp/mukhdr-icon
+
+          ICON_SOURCE="/tmp/mukhdr-icon/AppIcon.appiconset"
+          ICON_DEST="ios/App/App/Assets.xcassets/AppIcon.appiconset"
+
+          if [ ! -f "$ICON_SOURCE/Contents.json" ]; then
+            echo "ERROR: AppIcon.appiconset/Contents.json was not found."
+            find /tmp/mukhdr-icon -maxdepth 4 -type f
+            exit 1
+          fi
+
+          if [ ! -d "ios/App/App/Assets.xcassets" ]; then
+            echo "ERROR: Assets.xcassets was not found."
+            find ios -name "Assets.xcassets" -print
+            exit 1
+          fi
+
+          rm -rf "$ICON_DEST"
+          cp -R "$ICON_SOURCE" "$ICON_DEST"
+
+          echo "Mukhdr app icon installed successfully."
+
       - name: Configure iOS Location Permission
         script: |
           PLIST="ios/App/App/Info.plist"
@@ -66,7 +96,7 @@ workflows:
       - name: Increment Build Number Automatically
         script: |
           cd ios/App
-          agvtool new-version -all $BUILD_NUMBER
+          agvtool new-version -all "$BUILD_NUMBER"
 
       - name: Set Up Code Signing Profiles
         script: |
