@@ -1,4 +1,4 @@
-
+```yaml
 workflows:
   ios-release-build:
     name: iOS TestFlight Release Build
@@ -44,6 +44,120 @@ workflows:
 
           pod install
 
+      - name: Configure Meta App Events
+        script: |
+          python3 <<'PY'
+          import plistlib
+          from pathlib import Path
+
+          app_id = "2015354905751447"
+          client_token = "PASTE_CLIENT_TOKEN_HERE"
+          display_name = "مخضر ios"
+
+          if client_token == "ad08e3315d4d0908b4eeba8f6f6b7300":
+              raise SystemExit(
+                  "ERROR: Replace PASTE_CLIENT_TOKEN_HERE with your Meta Client Token."
+              )
+
+          plist_path = Path("ios/App/App/Info.plist")
+          if not plist_path.exists():
+              raise SystemExit(f"ERROR: Missing {plist_path}")
+
+          with plist_path.open("rb") as f:
+              plist = plistlib.load(f)
+
+          plist["FacebookAppID"] = app_id
+          plist["FacebookClientToken"] = client_token
+          plist["FacebookDisplayName"] = display_name
+          plist["FacebookAutoLogAppEventsEnabled"] = True
+
+          url_types = plist.get("CFBundleURLTypes", [])
+          scheme = "fb" + app_id
+          found = False
+
+          for item in url_types:
+              schemes = item.get("CFBundleURLSchemes", [])
+              if scheme in schemes:
+                  found = True
+                  break
+
+          if not found:
+              url_types.append({"CFBundleURLSchemes": [scheme]})
+
+          plist["CFBundleURLTypes"] = url_types
+
+          query_schemes = set(plist.get("LSApplicationQueriesSchemes", []))
+          query_schemes.update([
+              "fbapi",
+              "fb-messenger-share-api",
+              "fbauth2",
+              "fbshareextension"
+          ])
+          plist["LSApplicationQueriesSchemes"] = sorted(query_schemes)
+
+          with plist_path.open("wb") as f:
+              plistlib.dump(plist, f)
+
+          print("Meta app settings added to Info.plist.")
+          PY
+
+          python3 <<'PY'
+          from pathlib import Path
+
+          path = Path("ios/App/App/AppDelegate.swift")
+          if not path.exists():
+              raise SystemExit(f"ERROR: Missing {path}")
+
+          source = path.read_text()
+
+          if "import FBSDKCoreKit" not in source:
+              source = source.replace(
+                  "import Capacitor",
+                  "import Capacitor\nimport FBSDKCoreKit",
+                  1
+              )
+
+          launch_old = """        // Override point for customization after application launch.
+                  return true"""
+
+          launch_new = """        ApplicationDelegate.shared.application(
+                      application,
+                      didFinishLaunchingWithOptions: launchOptions
+                  )
+                  return true"""
+
+          if "ApplicationDelegate.shared.application(" not in source:
+              if launch_old not in source:
+                  raise SystemExit(
+                      "ERROR: Could not locate the launch method. AppDelegate was not changed."
+                  )
+              source = source.replace(launch_old, launch_new, 1)
+
+          url_old = """        return ApplicationDelegateProxy.shared.application(app, open: url, options: options)"""
+
+          url_new = """        let handledByMeta = ApplicationDelegate.shared.application(
+                    app,
+                    open: url,
+                    options: options
+                )
+                let handledByCapacitor = ApplicationDelegateProxy.shared.application(
+                    app,
+                    open: url,
+                    options: options
+                )
+                return handledByMeta || handledByCapacitor"""
+
+          if "let handledByMeta = ApplicationDelegate.shared.application(" not in source:
+              if url_old not in source:
+                  raise SystemExit(
+                      "ERROR: Could not locate the URL callback. AppDelegate was not changed."
+                  )
+              source = source.replace(url_old, url_new, 1)
+
+          path.write_text(source)
+          print("Meta SDK lifecycle and URL callbacks configured.")
+          PY
+
       - name: Apply Mukhdr App Icon
         script: |
           if [ ! -f "mukhdr-ios-icon.zip" ]; then
@@ -78,20 +192,10 @@ workflows:
         script: |
           PLIST="ios/App/App/Info.plist"
 
-          if [ ! -f "$PLIST" ]; then
-            echo "ERROR: Info.plist was not found at $PLIST"
-            find ios -name "Info.plist" -print
-            exit 1
-          fi
+          /usr/libexec/PlistBuddy -c "Set :NSLocationWhenInUseUsageDescription نحتاج إلى موقعك الحالي لتحديد عنوان توصيل طلبك بدقة." "$PLIST" 2>/dev/null || \
+          /usr/libexec/PlistBuddy -c "Add :NSLocationWhenInUseUsageDescription string نحتاج إلى موقعك الحالي لتحديد عنوان توصيل طلبك بدقة." "$PLIST"
 
-          if /usr/libexec/PlistBuddy -c "Print :NSLocationWhenInUseUsageDescription" "$PLIST" >/dev/null 2>&1; then
-            /usr/libexec/PlistBuddy -c "Set :NSLocationWhenInUseUsageDescription نحتاج إلى موقعك الحالي لتحديد عنوان توصيل طلبك بدقة." "$PLIST"
-          else
-            /usr/libexec/PlistBuddy -c "Add :NSLocationWhenInUseUsageDescription string نحتاج إلى موقعك الحالي لتحديد عنوان توصيل طلبك بدقة." "$PLIST"
-          fi
-
-          echo "Location permission description configured:"
-          /usr/libexec/PlistBuddy -c "Print :NSLocationWhenInUseUsageDescription" "$PLIST"
+          echo "Location permission configured."
 
       - name: Increment Build Number Automatically
         script: |
@@ -118,3 +222,4 @@ workflows:
       app_store_connect:
         auth: integration
         submit_to_testflight: true
+```
