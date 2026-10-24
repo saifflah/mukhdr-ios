@@ -50,10 +50,10 @@ workflows:
           from pathlib import Path
 
           app_id = "2015354905751447"
-          client_token = "PASTE_CLIENT_TOKEN_HERE"
+          client_token = "ad08e3315d4d0908b4eeba8f6f6b7300"
           display_name = "مخضر ios"
 
-          if client_token == "ad08e3315d4d0908b4eeba8f6f6b7300":
+          if client_token == "PASTE_CLIENT_TOKEN_HERE":
               raise SystemExit(
                   "ERROR: Replace PASTE_CLIENT_TOKEN_HERE with your Meta Client Token."
               )
